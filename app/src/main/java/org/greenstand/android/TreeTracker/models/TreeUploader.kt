@@ -19,6 +19,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
+import kotlinx.datetime.Clock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.greenstand.android.TreeTracker.analytics.CrashKey
@@ -176,7 +177,7 @@ class TreeUploader(
     }
 
     private suspend fun uploadTreeBundles(trees: List<TreeEntity>) {
-        exceptionDataCollector.set(CrashKey.UPLOAD_QUEUE_SNAPSHOT, "Tree id: " + trees.map { it.id }.toString())
+        exceptionDataCollector.set(CrashKey.UPLOAD_QUEUE_SNAPSHOT, "pending=${trees.size} trees;time=${Clock.System.now()};")
         log("Uploading Tree Bundle...")
         // Create a request object for each tree
         val treeRequestList =
@@ -207,6 +208,7 @@ class TreeUploader(
         objectStorageClient.uploadBundle(jsonBundle, bundleId)
         dao.updateTreesUploadStatus(trees.map { it.id }, true)
         log("Bundle Tree Upload Completed")
+        exceptionDataCollector.set(CrashKey.UPLOAD_QUEUE_SNAPSHOT, "last_success=${0} trees;time=${Clock.System.now()};uploadBundleId=$bundleId;")
     }
 
     private fun deleteLocalImages(photoPaths: List<String?>) {
